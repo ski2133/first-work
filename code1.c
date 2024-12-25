@@ -1,275 +1,267 @@
 #include<stdio.h>
 #include<stdlib.h>
-#include<string.h>//strcmp等を使うため
-#include<time.h>//現在時刻を得るため
-#include<stdbool.h>//boolを使うため
-#define MAX 100//配列、ポインターの大きさ用
-#define ERR -5//打ち間違い用
-int alphaout(char *input, int number);//数字だけにする関数
-int miss();//打ちミスを処理する関数
-char select(char *intonly);//選択肢を確認する関数
-int timeanddate(int enter);//計算結果を出す関数
-int calc(int *bunkai, int ans);//実際の計算を行う関数
-//月の計算を行う関数
-int monthcheck(int *bunkai, const int *sixty, const int *month);
+#include<time.h>
+#include<stdbool.h>
+#include<math.h>
+#define MAX 100
+#define SELECT 9//選択肢の数
+char* input(char* string, char* charonly);
+int inputnumber(char* number);
+char* shuffle(char* string, int length);
+char* reverse(char* string, int length);
+char* vowelout(char* string, int length, int inout);
+char* alphachange(char* string, int length);
+char* alphamove(char* string, int length, int plusminus);
+char* sort(char* string, int length, int maxmin);
 int main(){
-    char *input;//入力
-    input = (char *)malloc(sizeof(char)*MAX);//メモリ確保
-    printf("どのプログラムを選択しますか\n");
-    printf("選択肢  1:現在時刻より後 2:入力した値より後\n");
-    printf("数字をを入力してください(半角数字以外は消えます)\n>");
-    alphaout(input, 0);
-    free(input);//メモリ解放
-    return 0;
+  int length = 0;
+  char* string, *charonly;
+  string = (char*)malloc(sizeof(char) * MAX);
+  charonly = (char*)malloc(sizeof(char) * MAX);
+  input(string, charonly);
+  string = charonly;
+  while(string[length] != '\0') length++;//長さを求める
+  printf("[0]終了[1]場所シャッフル[2]リバース[3]母音抜き[4]子音抜き\n");
+  printf("[5]アルファベットの大文字小文字変換\n");
+  printf("[6]選択された数字分アルファベットを後にずらす\n");
+  printf("[7]選択された数字分アルファベットを前にずらす\n");
+  printf("[8]昇順(A->Z)[9]降順(Z->A)\n");
+  printf("選択肢の数字を入力してください\n>");
+  char number[MAX];
+  while(true){
+  int num = inputnumber(number);//数字を入力
+  if(num == 0) break;
+  if(num == 1) shuffle(string, length);
+  if(num == 2) reverse(string, length);
+  if(num == 3) string = vowelout(string, length, 0);
+  if(num == 4) string = vowelout(string, length, 1);
+  if(num == 5) alphachange(string, length);
+  if(num == 6) alphamove(string, length, 0);
+  if(num == 7) alphamove(string, length, 1);
+  if(num == 8) sort(string, length, 0);
+  if(num == 9) sort(string, length, 1);
+  printf("途中結果[%s]\n次の動作の数字を選んでください\n>", string);
+  }
+
+  free(string);
+  printf("最終結果[%s]\n", string);
+  return 0;
 }
-//アルファベットを除く
-int alphaout(char *input, int number){
-  char intonly[MAX] = {0};
+
+char* input(char *string, char *charonly){
+  printf("文字列を入力してください(アルファベット以外は削除されます)>");
+  fgets(string, MAX, stdin);
+  int k = 0;
+  for(int i = 0; i < MAX; i++){
+    if(string[i] >= 'a' && string[i] <= 'z'){
+      charonly[k] = string[i];
+      k++;
+    }else if(string[i] >= 'A' && string[i] <= 'Z'){
+      charonly[k] = string[i];
+      k++;
+    }else{
+      continue;
+    }
+  }
+  return 0;
+}
+
+int inputnumber(char *number){
   int num = 0;
-  fgets(input,MAX,stdin);//inputの入力
-  int line = strlen(input);//inputが何文字かを知る
-  if(line == 1){//実際の文字列より1大きくなる
-    miss();
-    return ERR;//ERRによってプログラムを終了させる
-  }
-  for(int i=0; i < line-1; i++){
-    for(int j=0; j <=9 ; j++){
-      if( (int)*(input+i) == (48+j) ){
-      intonly[num]= *(input+i);
-      num++;//48は0の文字コード57は9の文字コード
-      }
-  }
-  }
-  if(intonly[0] == '\0'){
-    miss();//intonlyに何も入っていないなら終了
-    return ERR;
-  } 
-  //number=0はmain関数のみ使う
-  if(number == 0){
-    char ans[MAX] = {0};
-    printf("入力内容は以上でよろしいですか？\n");
-    printf("  yes / no \n>");
-    fgets(ans,MAX,stdin);
-    //文字列比較にはstrcmpでないといけない
-    //strcasecmpは大文字小文字の区別をしない
-    if(strcasecmp(ans, "yes\n") == 0){
-      select(intonly);
-    }
-    else if(strcasecmp(ans, "no\n") == 0){
-      miss();
-      return 0;
-    } 
-    else{
-      printf("yes / no以外が打たれたので終了します");
-      return 0;
-    }
-  }else if(number == 1){
-    int ans = atoi(intonly);//文字列なので
-    return ans;
-  }
-  return 0;
-}
-
-int miss(){
-  printf("もう一度打ち直してください");
-  return 0;
-}
-//どのプログラムか決める
-char select(char *intonly){
-  int ans = 0;
-  if(*intonly == '1'){
-      ans = timeanddate(1);
-  }else if(*intonly == '2'){
-      ans = timeanddate(2);
+  while(true){
+  char number[MAX];
+  fgets(number, MAX, stdin);//一文字に入力だとバグ発生
+  num = atoi(number);
+  if( number[0] - '0' != 0 && num == 0){
+    printf("エラー。もう一度入力してください\n>");
   }else{
-      printf("エラー。選択肢にありません");
-      return 0;
+    bool flag = false;
+    for(int i = 0; i <= SELECT; i++){
+        if(num == i) flag = true; 
+    }
+    if(flag) break;
+    else printf("エラー。その数字はありません\n>");
   }
-  if(ans == ERR) return 0;
+
+  }
+  return num;
+}
+char* shuffle(char *string, int length){
+  srand(time(NULL));
+for(int i = 0; i < length; i++){
+    int random = rand() % length;
+    char tmp = string[i];
+    string[i] = string[random];
+    string[random] = tmp;
+  }
   return 0;
 }
 
-int timeanddate(int enter){
-  printf("どの計算をしますか\n");
-  printf("選択肢   1:分刻み 2:時間刻み \n\t 3:日付刻み  4:月刻み\n\t 5:年刻み\n>");
-  char *input;
-  input = (char *)malloc(sizeof(char)*MAX);
-  int ans = alphaout(input, 1);//返答
-  free(input);
-  if(ans > 5){
-    miss();//6以上の選択肢はないので
-    return 0;
+char* reverse(char *string, int length){
+  for(int i = 0; i < length/2; i++){
+    char tmp = string[i];
+    string[i] = string[length-1-i];
+    string[length-1-i] = tmp;
   }
-  if(ans == ERR) return ERR;
-  time_t timer = time(NULL);
-  struct tm *ltime;
-  ltime = localtime(&timer);
-  char year[MAX],timestr[MAX], week[MAX];
-  strftime(year, MAX, "%Y",ltime);//年
-  strftime(timestr, MAX, "%m%d%H%M",ltime);//月日時間分
-  strftime(week, MAX, "%w",ltime);//曜日を文字型の数字で出す
-  int yearint = atoi(year);//yearは文字列なのでatoi
-  char c[5][5];
-  int bunkai[10] = {0};
-  for(int i = 0; i < 4; i++){
-    for(int j = 0; j < 1; j++){
-      //月日時間分で分けられた配列
-      c[i][j] = timestr[j+2*i];
-      c[i][j+1] = timestr[j+1+2*i];
+  return 0;
+}
+
+char *vowelout(char *string, int length, int inout){
+  char vowel[] = {'a','i','u','e','o','A','I','U','E','O'};
+  char* ans;
+  int k = 0;
+  ans = (char*)malloc(sizeof(char) * MAX);
+
+  for(int i = 0; i < length; i++){
+    bool flag = false;
+    for(int j = 0; j < 10; j++){
+      if(inout == 0){
+        if(string[i] == vowel[j]){
+          string[i] = ' ';
+          continue;//次の文字に移る
+        }
+        }else if(inout == 1){
+          if(string[i] == vowel[j]){
+            flag = true;
+            if(flag) break;
+        }
+        }
+  }
+  if(!flag && inout == 1){
+    string[i] = ' ';
+  }
+  }
+  for(int i = 0; i < length; i++){
+    if(string[i] != ' '){
+      ans[k] = string[i];
+      k++;
     }
-    bunkai[4-i] = atoi(c[i]);//int型に変換
   }
-  bunkai[5] = yearint;//年をbunkai[5]に代入
-  int iweek = atoi(week);//iweekに曜日を数字で表したものを代入
-  char *today[7] = { "日", "月", "火", "水", "木", "金", "土" };
-  //fgetsには\nが入るので。scanfだとバグが起こった
-  char *today1[7] ={ "日\n", "月^n", "火\n", "水\n", "木\n", "金\n", "土\n"};
-  if(enter == 1){
-  printf("現在時刻%d年%02d月%02d日%02d時%02d分 %s曜日\n"
-  ,bunkai[5],bunkai[4],bunkai[3],bunkai[2],bunkai[1],*(today+iweek));
-  }
-  else if(enter == 2){//selectで2を入れるとこっち
-    input = (char *)malloc(sizeof(char)*MAX);
-    printf("何年何月何日何時何分<-左から何に数字を入れるように\n");
-    printf("入力してください\n");
-    for(int i = 5; i >= 1; i--){
-      printf(">");
-      bunkai[i] = alphaout(input, 1);
-      if(bunkai[i] == ERR) return 0;
+  return ans;
+}
+
+char* alphachange(char* string, int length){
+  for(int i = 0; i < length; i++){
+    if(string[i] >= 'a' && string[i] <= 'z'){
+      string[i] = string[i] - 32;//大文字に変換
+    }else if(string[i] >= 'A' && string[i] <= 'Z'){
+      string[i] = string[i] + 32;//小文字に変換
     }
-    free(input);
-    char output[MAX];
-    printf("何曜日?(正確に漢字を入れないと今日の曜日になります)\n>");
-    fgets(output,MAX,stdin);
-    for(int i = 0; i <= 6; ++i) if(strcmp(output,today1[i]) == 0) iweek = i;
-      printf("元とする時刻%d年%02d月%02d日%02d時%02d分 %s曜日\n"
-    ,bunkai[5],bunkai[4],bunkai[3],bunkai[2],bunkai[1],*(today+iweek));
   }
-  int count[6] = {0,bunkai[1],bunkai[2],bunkai[3],bunkai[4],bunkai[5]};
-  int check = 0;
-  check = calc(bunkai, ans);//これが実際の計算
-  if(check == ERR) return ERR;
-  int total[6] = {0};
-  for(int i = 3; i <= 5; i++) total[i] = bunkai[i] - count[i];
-  int total1[3] = {0};//月の数を入れる変数
-  const int month[5] = {2,4,6,9,11};
-  int min = count[4], max = bunkai[4]; 
-  int differ = bunkai[5] - count[5];//年同士の計算
-  if(bunkai[5] != count[5]) total[5]--;//下のfor文で1年分は計算できるので
-  if(bunkai[5] > count[5]) max += 12;
-  for(int i = min; i < max; i++){
-    bool flag = true;
-    int k = i;
-    if(max > 12 && i > 12) k -= 12;
-    for(int j = 0; j < 5; j++){
-      if(month[j] == k){//2,4,6,9,11月なのか？
-        flag = false;
+  return string;
+}
+
+char* alphamove(char* string, int length, int plusminus){
+  int tmp = 0;
+  while(true){
+    char movenum[MAX];
+    int move[MAX] = {0}, movelength = 0;
+    bool flag = false;
+
+    printf("何文字ずらしますか\n>");
+    fgets(movenum, MAX, stdin);
+    while(movenum[movelength] != '\n') movelength++;
+    movenum[movelength] = '\0';
+
+    for(int i = 0; i < movelength; i++){
+      move[i] = atoi(&movenum[i]);
+    }
+
+    for(int i = 0; i < movelength; i++){
+    if(movenum[i] - '0' != 0 && move[i] == 0){
+        printf("エラー。もう一度入力してください\n");
         break;
-    }
-    }
-    if(flag){//31日
-      total1[0]++;
-    }else if(k != 2){//30日以下
-      total1[1]++;
-    }else{//2月
-      total1[2]++;
+      }else{
+        flag = true;
+        tmp = move[0];//数字の場合先頭アドレスでいいらしい
     }
   }
-  if(bunkai[5] % 4 != 0){
-    total[4] = total1[0]*31 + total1[1]*30 + total1[2]*28;
-  }else{
-    int leap = differ / 4;//閏年用
-    total[4] = total1[0]*31 + total1[1]*30 + total1[2]*28 + leap;
+  if(flag) break;
   }
-  int sdays = (total[5]*365 + total[4] + total[3] + iweek) % 7;
-  printf("求めた時刻%d年%02d月%02d日%02d時%02d分 %s曜日\n"
-  ,bunkai[5],bunkai[4],bunkai[3],bunkai[2],bunkai[1],*(today+sdays));
-  return 0;
-}
 
-int calc(int *bunkai, int ans){
-  //[0]念の為 [1]分 [2]時 [3]日(1) 
-  //[4]日(2) [5]日(3) [6]月 [7]閏年
-  const int sixty[20] = {60,60,24,32,31,29,12,30};
-  const int month[5] = {2,4,6,9,11};//30日じゃない月
-  char *input;
-  input = (char *)malloc(sizeof(char)*MAX);
-  if(ans == 5) printf("何年後?\n>");
-  if(ans == 4) printf("何月後?\n>");
-  if(ans == 3) printf("何日後?\n>");
-  if(ans == 2) printf("何時間後?\n>");
-  if(ans == 1) printf("何分後?\n>");
-  int tmp = alphaout(input, 1);
-  if(tmp == ERR) return ERR;
-  free(input);
-  //年は単純に足せばよいのでif文はない
-  *(bunkai+ans) += tmp;//足し算
-  if(ans == 4){
-    while(*(bunkai+ans) > sixty[ans+2]){
-      *(bunkai+ans) -= 12;
-      *(bunkai+5) += 1;
-    }
-    }
-  if(ans == 3) monthcheck(bunkai, sixty ,month);
-  if(ans <= 2){
-  while(*(bunkai+ans) >= sixty[ans]){
-    *(bunkai+ans) -= sixty[ans];
-    *(bunkai+ans+1) += 1;
-  }
-  }
-  if(ans >= 2) calc(bunkai, ans-1);//ansが1のときは再帰しない
-//足し方の順番的におかしい数字になることがあるので
-  for(int i = 1; i < 10; i++){
-    if(i <= 2){
-    while(*(bunkai+i) >= sixty[i]){
-      *(bunkai+i) -= sixty[i];
-      *(bunkai+i+1) += 1;
-    }
-    }else if(3 <= i  && i <= 5){
-      monthcheck(bunkai, sixty, month);
-      i = 5;
-    }else if(i == 6){
-      while(*(bunkai+4) > sixty[i]){
-      *(bunkai+4) -= sixty[i];
-      *(bunkai+5) += 1;
-      }
-    }
-  }
-  return 0;
-}
+  int movetotal = tmp;
+  while(movetotal >= 26) movetotal -= 26;
+  tmp = movetotal;
+  if(plusminus == 1) movetotal = 0 - movetotal;//マイナスのほうが分かりやすい
 
-int monthcheck(int *bunkai, const int *sixty, const int *month){
-  while(*(bunkai+3) >= *(sixty+3)){  
-    //月が12より大きいなら(無いと全部31日になる)
-    //月は前の計算で12以下なので13の時に使われる
-    if(*(bunkai+4) > *(sixty+6)){
-       *(bunkai+4) -= *(sixty+6); 
-       *(bunkai+5) += 1;
-    }
-    bool flag = true;
-    for(int i = 0; i < 5; i++){
-      if(*(bunkai+4) == *(month+i)){
-        flag = false;//2,4,6,9,11月のときと場合分け
-        break;//つけないと11月の時以外反応しなくなる
+  if (movetotal == 0) return string;//何もしない
+
+  for(int i = 0; i < length; i++){
+    if(string[i] >= 'a' && string[i] <= 'z'){
+      if(string[i] == 'z' && movetotal > 0){//zを超える場合
+        string[i] = 'a' + movetotal - 1;
+      }else if(string[i] == 'a' && movetotal < 0){//aを下回る場合
+        string[i] = 'z' + movetotal + 1;
       }
-    }
-    if(flag){//31日
-        *(bunkai+3) = *(bunkai+3) + 1 - *(sixty+3);
-        *(bunkai+4) += 1;
-    }else{//30日
-      if(*(bunkai+4) != 2){
-        *(bunkai+3) = *(bunkai+3) + 1 - *(sixty+4);
-        *(bunkai+4) += 1;
-      }else{//２月
-        if(*(bunkai+5) % 4 != 0){
-        *(bunkai+3) = *(bunkai+3) + 1 - *(sixty+5);
-        *(bunkai+4) += 1;
-        }else{//閏年なら2月を29日として計算する
-        *(bunkai+3) = *(bunkai+3) + 1 - *(sixty+7);
-        *(bunkai+4) += 1;
+
+        else{
+        if(string[i] + movetotal > 'z'){//zを超える場合
+          string[i] = string[i] + movetotal - 26;
+        }else if(string[i] + movetotal < 'a'){//aを下回る場合
+          string[i] = string[i] + movetotal + 26;
+        }
+        else{
+          string[i] = string[i] + movetotal;
+        }
+        }
+
+    }else if(string[i] >= 'A' && string[i] <= 'Z'){
+      if(string[i] == 'Z' && movetotal > 0){//+
+        string[i] = 'A' + movetotal - 1;
+      }else if(string[i] == 'A' && movetotal < 0){//-
+        string[i] = 'Z' + movetotal + 1;
+      }
+      else{
+        if(string[i] + movetotal > 'Z'){//zを超える場合
+          string[i] = string[i] + movetotal - 26;
+        }else if(string[i] + movetotal < 'A'){//aを下回る場合
+          string[i] = string[i] + movetotal + 26;
+        }
+        else{
+          string[i] = string[i] + movetotal;
         }
       }
     }
+  }
+  printf("アルファベットを");
+  if(plusminus == 0) printf("後");
+  else printf("前");
+  printf("に%d文字ずらしました\n", tmp);
+  return string;
+}
+
+char* sort(char* string, int length, int maxmin){
+  char max, min;
+  if(maxmin == 0){//昇順
+    for(int i = 0; i < length; i++){
+      min = i;
+      for(int j = i+1; j < length; j++){
+        if(string[j] < string[min]){
+          min = j;
+        }
+      }
+
+      if(min != i){
+      char tmp = string[i];
+      string[i] = string[min];
+      string[min] = tmp;
     }
+
+    }
+  }else if(maxmin == 1){//降順
+    for(int i = 0; i < length; i++){
+      max = i;
+      for(int j = i+1; j < length; j++){
+        if(string[j] > string[max]){
+          max = j;
+        }
+      }
+      if(max != i) {
+        char tmp = string[i];
+        string[i] = string[max];
+        string[max] = tmp;
+      }
+    }
+  }
   return 0;
 }
