@@ -43,8 +43,8 @@ int main(){
   printf("途中結果[%s]\n次の動作の数字を選んでください\n>", string);
   }
 
-  free(string);
   printf("最終結果[%s]\n", string);
+  free(string);
   return 0;
 }
 
@@ -231,7 +231,7 @@ char* alphamove(char* string, int length, int plusminus){
 }
 
 char* sort(char* string, int length, int maxmin){
-  char max, min;
+  int max, min;
   if(maxmin == 0){//昇順
     for(int i = 0; i < length; i++){
       min = i;
